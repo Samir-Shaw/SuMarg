@@ -1,0 +1,16 @@
+[ 2026-11-01 15:54:02,976 ] 64 root - INFO - Starting Data Transformation component.
+[ 2026-11-01 15:54:02,977 ] 53 root - INFO - Data Validation check PASSED. Transformation shuru ki ja sakti hai.
+[ 2026-11-01 15:54:02,987 ] 75 root - INFO - Read train and test data successfully.
+[ 2026-11-01 15:54:02,988 ] 87 root - INFO - Applying preprocessing object on training and testing datasets.
+[ 2026-11-01 15:54:03,034 ] 25 root - INFO - Object successfully saved at: C:\Users\karan\OneDrive\Desktop\SuMarg\ml_engine\artifacts\preprocessor.pkl
+[ 2026-11-01 15:54:03,035 ] 99 root - INFO - Preprocessor object saved at C:\Users\karan\OneDrive\Desktop\SuMarg\ml_engine\artifacts\preprocessor.pkl
+[ 2026-11-01 15:54:03,036 ] 28 root - INFO - Splitting transformed train and test arrays into X and y.
+[ 2026-11-01 15:54:03,036 ] 39 root - INFO - Initiating model evaluation via utils.evaluate_models.
+[ 2026-11-01 15:54:04,485 ] 84 root - INFO - Trained Random Forest -> R2: 0.9992, RMSE: 0.1805, MAE: 0.0378
+[ 2026-11-01 15:54:06,776 ] 84 root - INFO - Trained Gradient Boosting -> R2: 0.9990, RMSE: 0.2043, MAE: 0.0765
+[ 2026-11-01 15:54:06,811 ] 84 root - INFO - Trained Decision Tree -> R2: 0.9981, RMSE: 0.2782, MAE: 0.0983
+[ 2026-11-01 15:54:06,817 ] 84 root - INFO - Trained Linear Regression -> R2: 0.8762, RMSE: 2.2618, MAE: 1.3296
+[ 2026-11-01 15:54:06,817 ] 50 root - INFO - Best Model Selected: Random Forest with R2: 0.999211446903848
+[ 2026-11-01 15:54:06,840 ] 25 root - INFO - Object successfully saved at: C:\Users\karan\OneDrive\Desktop\SuMarg\ml_engine\artifacts\model.pkl
+[ 2026-11-01 15:54:06,841 ] 73 root - INFO - Trained model saved at: C:\Users\karan\OneDrive\Desktop\SuMarg\ml_engine\artifacts\model.pkl
+[ 2026-11-01 15:54:06,842 ] 74 root - INFO - Metrics saved at: C:\Users\karan\OneDrive\Desktop\SuMarg\ml_engine\artifacts\metrics.json

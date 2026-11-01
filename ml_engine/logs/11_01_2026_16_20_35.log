@@ -1,0 +1,6 @@
+[ 2026-11-01 16:20:35,586 ] 64 root - INFO - Starting Data Transformation component.
+[ 2026-11-01 16:20:35,588 ] 53 root - INFO - Data Validation check PASSED. Transformation shuru ki ja sakti hai.
+[ 2026-11-01 16:20:35,595 ] 75 root - INFO - Read train and test data successfully.
+[ 2026-11-01 16:20:35,597 ] 87 root - INFO - Applying preprocessing object on training and testing datasets.
+[ 2026-11-01 16:20:35,645 ] 25 root - INFO - Object successfully saved at: C:\Users\karan\OneDrive\Desktop\SuMarg\ml_engine\artifacts\preprocessor.pkl
+[ 2026-11-01 16:20:35,645 ] 99 root - INFO - Preprocessor object saved at C:\Users\karan\OneDrive\Desktop\SuMarg\ml_engine\artifacts\preprocessor.pkl

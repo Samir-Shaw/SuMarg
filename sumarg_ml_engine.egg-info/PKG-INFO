@@ -6,6 +6,7 @@ Author-email:
 Requires-Dist: pandas
 Requires-Dist: numpy
 Requires-Dist: scikit-learn
+Requires-Dist: xgboost
 Requires-Dist: lightgbm
 Requires-Dist: joblib
 Requires-Dist: traci
@@ -13,5 +14,6 @@ Requires-Dist: sumolib
 Requires-Dist: matplotlib
 Requires-Dist: seaborn
 Requires-Dist: pyyaml
+Requires-Dist: flask
 Dynamic: author
 Dynamic: requires-dist

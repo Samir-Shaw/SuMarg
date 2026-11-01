@@ -3,8 +3,12 @@ ml_engine/__init__.py
 ml_engine/src/__init__.py
 ml_engine/src/exception.py
 ml_engine/src/logger.py
+ml_engine/src/utils.py
 ml_engine/src/components/__init__.py
 ml_engine/src/components/data_ingestion.py
+ml_engine/src/components/data_transformation.py
+ml_engine/src/components/data_validation.py
+ml_engine/src/components/model_trainer.py
 ml_engine/src/pipeline/__init__.py
 ml_engine/src/pipeline/predict_pipeline.py
 sumarg_ml_engine.egg-info/PKG-INFO

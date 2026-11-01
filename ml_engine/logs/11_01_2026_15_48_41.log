@@ -1,0 +1,3 @@
+[ 2026-11-01 15:48:41,433 ] 64 root - INFO - Starting Data Transformation component.
+[ 2026-11-01 15:48:41,434 ] 53 root - INFO - Data Validation check PASSED. Transformation shuru ki ja sakti hai.
+[ 2026-11-01 15:48:41,447 ] 75 root - INFO - Read train and test data successfully.

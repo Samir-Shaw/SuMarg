@@ -3,10 +3,7 @@ import random
 import sys
 from pathlib import Path
 
-# -------------------------------------------------------------------------
-# STEP 1: Root folder ('SuMarg') ko Python path mein add karna
-# File location: traci_core/collectors/telemetry_collector.py -> 2 levels up to root
-# -------------------------------------------------------------------------
+# Root directory path resolve karna
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.append(str(ROOT_DIR))
@@ -16,57 +13,59 @@ from traci_core.config import SIM_CONFIG_PATH, DATASET_RAW_PATH, MAX_SPEED
 
 
 def calculate_row_data(vehicle_speed: float, leader_distance: float, leader_speed: float, speed_limit: float):
-    """
-    Yeh function 4 raw sensor values leta hai aur derived features (relative_speed, 
-    time_to_collision) + ML target label (target_speed) calculate karta hai.
-    """
-    # 1. Relative Speed: Ego vehicle aur leader vehicle ki speed ka difference
-    relative_speed = vehicle_speed - leader_speed
+    # 1. Wider Radar Sensor Noise (~1.0m distance variance, ~0.6m/s speed variance)
+    noisy_distance = max(0.5, leader_distance + random.gauss(0, 1.0))
+    noisy_leader_speed = max(0.0, leader_speed + random.gauss(0, 0.6))
+    noisy_ego_speed = max(0.0, vehicle_speed + random.gauss(0, 0.4))
 
-    # 2. Time-To-Collision (TTC): Collision risk estimate in seconds
+    # 2. Relative speed aur TTC
+    relative_speed = noisy_ego_speed - noisy_leader_speed
+
     if relative_speed > 0.1:
-        time_to_collision = min(99.0, max(0.1, leader_distance / relative_speed))
+        time_to_collision = min(99.0, max(0.1, noisy_distance / relative_speed))
     else:
         time_to_collision = 99.0
 
-    # 3. Target Speed (Label Y): Safe dynamic braking target
+    # 3. Base Target Speed Calculation
     min_safe_gap = 6.0
-    safe_following_gap = min_safe_gap + (vehicle_speed * 1.5)
+    safe_following_gap = min_safe_gap + (noisy_ego_speed * 1.5)
 
-    if leader_distance <= min_safe_gap or time_to_collision <= 1.2:
-        # Emergency Braking
+    if noisy_distance <= min_safe_gap or time_to_collision <= 1.2:
+        # Full stop / Emergency braking remains strict
         target_speed = 0.0
 
-    elif leader_distance < safe_following_gap:
-        # Smooth Auto-Brake / Deceleration
-        ratio = (leader_distance - min_safe_gap) / max(1.0, (safe_following_gap - min_safe_gap))
-        target_speed = leader_speed * ratio
+    elif noisy_distance < safe_following_gap:
+        # Auto-braking with actuation variance
+        ratio = (noisy_distance - min_safe_gap) / max(1.0, (safe_following_gap - min_safe_gap))
+        target_speed = (noisy_leader_speed * ratio) + random.gauss(0, 0.8)
 
-    elif leader_distance < 45.0 and leader_speed < vehicle_speed:
-        # Adaptive Cruise Control (Speed matching)
-        target_speed = leader_speed + (vehicle_speed - leader_speed) * ((leader_distance - safe_following_gap) / 45.0)
+    elif noisy_distance < 45.0 and noisy_leader_speed < noisy_ego_speed:
+        # Adaptive cruise with driver delay
+        target_speed = (
+            noisy_leader_speed
+            + (noisy_ego_speed - noisy_leader_speed) * ((noisy_distance - safe_following_gap) / 45.0)
+            + random.gauss(0, 1.0)
+        )
 
     else:
-        # Free cruising up to road speed limit
+        # Cruising with dynamic throttle acceleration
+        accel_step = random.uniform(0.5, 3.0)
         allowed_max = min(MAX_SPEED, speed_limit)
-        target_speed = min(allowed_max, vehicle_speed + 2.0)
+        target_speed = min(allowed_max, noisy_ego_speed + accel_step) + random.gauss(0, 1.2)
 
-    # Physical clamping between 0 and road speed limit
+    # 4. Physical safety clamping
     target_speed = max(0.0, min(speed_limit, target_speed))
 
     return [
-        round(vehicle_speed, 2),
-        round(leader_speed, 2),
-        round(leader_distance, 2),
+        round(noisy_ego_speed, 2),
+        round(noisy_leader_speed, 2),
+        round(noisy_distance, 2),
         round(relative_speed, 2),
         round(time_to_collision, 2),
         round(speed_limit, 2),
         round(target_speed, 2)
-    ]
-
-
+    ]   
 def collect_braking_data(max_steps=1500):
-    # Ensure ml_engine/data/raw/ directory exists
     DATASET_RAW_PATH.parent.mkdir(parents=True, exist_ok=True)
     all_rows = []
 
@@ -77,7 +76,7 @@ def collect_braking_data(max_steps=1500):
         print(f"🚀 Step 1: SUMO Simulation start ho raha hai ({SIM_CONFIG_PATH.name})...")
         try:
             traci.start(["sumo", "-c", str(SIM_CONFIG_PATH), "--no-step-log", "true", "--no-warnings", "true"])
-            
+
             step = 0
             while traci.simulation.getMinExpectedNumber() > 0 and step < max_steps:
                 traci.simulationStep()
@@ -86,7 +85,14 @@ def collect_braking_data(max_steps=1500):
                 for veh_id in traci.vehicle.getIDList():
                     vehicle_speed = traci.vehicle.getSpeed(veh_id)
                     lane_id = traci.vehicle.getLaneID(veh_id)
-                    speed_limit = traci.lane.getMaxSpeed(lane_id)
+
+                    if lane_id:
+                        try:
+                            speed_limit = traci.lane.getMaxSpeed(lane_id)
+                        except traci.TraCIException:
+                            speed_limit = MAX_SPEED
+                    else:
+                        speed_limit = MAX_SPEED
 
                     leader_info = traci.vehicle.getLeader(veh_id, 100.0)
                     if leader_info is not None:
@@ -104,13 +110,13 @@ def collect_braking_data(max_steps=1500):
 
         except Exception as e:
             print(f"⚠️ Note: SUMO run skip hua ya XML issue ({e}).")
-            print("👉 Physics-based synthetic generator se full dataset generate ho raha hai...")
+            print("👉 Physics-based synthetic generator fallback use ho raha hai...")
 
     # =========================================================================
-    # PART B: Physics Scenarios & Edge Cases (Emergency Stop, ACC, Open Road)
+    # PART B: Physics Scenarios & Edge Cases
     # =========================================================================
     print("🧪 Step 2: 5,000 Edge-case scenarios generate ho rahe hain...")
-    
+
     for _ in range(5000):
         speed_limit = random.choice([13.89, 16.67, 22.22, 25.0])
         vehicle_speed = random.uniform(0.0, speed_limit)
@@ -153,11 +159,11 @@ def collect_braking_data(max_steps=1500):
         writer.writerow(headers)
         writer.writerows(all_rows)
 
-    print("\n" + "="*65)
-    print(f"🎉 Dataset Successfully Updated!")
+    print("\n" + "=" * 65)
+    print(f"🎉 Dataset Successfully Updated With Realistic Physics Noise!")
     print(f"📊 Total Rows Saved : {len(all_rows)}")
     print(f"📂 Saved Location   : {DATASET_RAW_PATH}")
-    print("="*65)
+    print("=" * 65)
 
 
 if __name__ == "__main__":

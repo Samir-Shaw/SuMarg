@@ -1,0 +1,3 @@
+[ 2026-11-01 15:11:37,402 ] 39 root - INFO - Data Validation component started.
+[ 2026-11-01 15:11:37,448 ] 55 root - INFO - Expected schema columns (7): ['vehicle_speed', 'leader_speed', 'leader_distance', 'relative_speed', 'time_to_collision', 'speed_limit', 'target_speed']
+[ 2026-11-01 15:11:37,451 ] 80 root - INFO - Data Validation status: True. Written to: C:\Users\karan\OneDrive\Desktop\SuMarg\ml_engine\artifacts\status.txt

@@ -1,14 +1,9 @@
-# Extract vehicle_speed, leader_distance, TTC, speed_limit
 import sys
 from pathlib import Path
 from typing import Dict, Any, Optional
 
-# Root directory path resolve karna
-ROOT_DIR = Path(__file__).resolve().parent.parent.parent
-if str(ROOT_DIR) not in sys.path:
-    sys.path.append(str(ROOT_DIR))
-
 import traci
+from traci_core.config import ROOT_DIR, MAX_SPEED
 
 
 class SensorUtils:
@@ -26,7 +21,7 @@ class SensorUtils:
             speed = traci.vehicle.getSpeed(veh_id)
             acceleration = traci.vehicle.getAcceleration(veh_id)
             lane_id = traci.vehicle.getLaneID(veh_id)
-            speed_limit = traci.lane.getMaxSpeed(lane_id) if lane_id else 22.22
+            speed_limit = traci.lane.getMaxSpeed(lane_id) if lane_id else MAX_SPEED
 
             return {
                 "speed": float(speed),
@@ -37,38 +32,31 @@ class SensorUtils:
             return None
 
     @staticmethod
-    def detect_leader(veh_id: str, radar_range: float = 100.0) -> Dict[str, Any]:
+    def detect_leader(veh_id: str, radar_range: float = 100.0, current_speed: Optional[float] = None) -> Dict[str, Any]:
         """
         Radar simulation: Aage chalne wali car (Leader) ko detect karta hai,
         uska gap, relative speed aur Time-To-Collision (TTC) calculate karta hai.
         """
-        telemetry = SensorUtils.get_vehicle_telemetry(veh_id)
-        if not telemetry:
-            return {
-                "has_leader": False,
-                "leader_id": None,
-                "gap": radar_range,
-                "leader_speed": 0.0,
-                "relative_speed": 0.0,
-                "ttc": 99.0
-            }
-
-        ego_speed = telemetry["speed"]
-
         try:
+            if current_speed is None:
+                current_speed = traci.vehicle.getSpeed(veh_id)
+
+            lane_id = traci.vehicle.getLaneID(veh_id)
+            speed_limit = traci.lane.getMaxSpeed(lane_id) if lane_id else MAX_SPEED
+
             # traci.vehicle.getLeader returns: (leader_id, distance) ya None
             leader_info = traci.vehicle.getLeader(veh_id, radar_range)
 
             if leader_info is not None:
                 leader_id, gap = leader_info
                 leader_speed = traci.vehicle.getSpeed(leader_id)
-                relative_speed = ego_speed - leader_speed
+                relative_speed = current_speed - leader_speed
 
-                # Time-to-Collision (TTC) calculation in seconds
+                # Time-to-Collision (TTC) in seconds
                 if relative_speed > 0.1:
                     ttc = min(99.0, max(0.1, gap / relative_speed))
                 else:
-                    ttc = 99.0  # Leader fast ya stationary relative pace par hai
+                    ttc = 99.0  # Safe: leader is moving faster or pacing
 
                 return {
                     "has_leader": True,
@@ -82,33 +70,34 @@ class SensorUtils:
         except traci.TraCIException:
             pass
 
-        # Open Road Fallback (Jab aage koi gaadi nahi ho)
+        # Open Road Fallback
         return {
             "has_leader": False,
             "leader_id": None,
             "gap": float(radar_range),
-            "leader_speed": telemetry["speed_limit"],
+            "leader_speed": float(speed_limit),
             "relative_speed": 0.0,
             "ttc": 99.0
         }
 
     @staticmethod
-    def get_features_for_ml(veh_id: str, radar_range: float = 100.0) -> Optional[list]:
+    def get_features_for_ml(veh_id: str, radar_range: float = 100.0) -> Optional[Dict[str, float]]:
         """
-        ML model ke exact 6 input feature vector banata hai:
-        [vehicle_speed, leader_speed, leader_distance, relative_speed, time_to_collision, speed_limit]
+        ML model ke exact 6 feature dictionary return karta hai
+        jo direct PredictPipeline ya DataFrame mein map ho sake:
+        {vehicle_speed, leader_speed, leader_distance, relative_speed, time_to_collision, speed_limit}
         """
         telemetry = SensorUtils.get_vehicle_telemetry(veh_id)
         if not telemetry:
             return None
 
-        radar = SensorUtils.detect_leader(veh_id, radar_range=radar_range)
+        radar = SensorUtils.detect_leader(veh_id, radar_range=radar_range, current_speed=telemetry["speed"])
 
-        return [
-            round(telemetry["speed"], 2),
-            round(radar["leader_speed"], 2),
-            round(radar["gap"], 2),
-            round(radar["relative_speed"], 2),
-            round(radar["ttc"], 2),
-            round(telemetry["speed_limit"], 2)
-        ]
+        return {
+            "vehicle_speed": round(telemetry["speed"], 2),
+            "leader_speed": round(radar["leader_speed"], 2),
+            "leader_distance": round(radar["gap"], 2),
+            "relative_speed": round(radar["relative_speed"], 2),
+            "time_to_collision": round(radar["ttc"], 2),
+            "speed_limit": round(telemetry["speed_limit"], 2)
+        }
