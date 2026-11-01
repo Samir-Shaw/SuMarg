@@ -1,0 +1,10 @@
+pandas
+numpy
+scikit-learn
+lightgbm
+joblib
+traci
+sumolib
+matplotlib
+seaborn
+-e .

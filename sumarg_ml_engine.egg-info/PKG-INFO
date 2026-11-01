@@ -1,0 +1,16 @@
+Metadata-Version: 2.4
+Name: sumarg_ml_engine
+Version: 0.0.1
+Author: PARRAS
+Author-email: 
+Requires-Dist: pandas
+Requires-Dist: numpy
+Requires-Dist: scikit-learn
+Requires-Dist: lightgbm
+Requires-Dist: joblib
+Requires-Dist: traci
+Requires-Dist: sumolib
+Requires-Dist: matplotlib
+Requires-Dist: seaborn
+Dynamic: author
+Dynamic: requires-dist
