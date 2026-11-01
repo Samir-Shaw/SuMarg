@@ -1,22 +1,25 @@
-# Python caches
-__pycache__/
-*.pyc
-
-# Virtual environments
+# Virtual Environment (Sabse zaroori - push block hone se bachane ke liye)
 venv/
 env/
+.venv/
+ENV/
 
-# SUMO Simulation Outputs
-tripinfos.xml
-edgeData.xml
-stats.xml
-sumosnap.png
+# Python Cache & Bytecode (Auto-generated temporary files)
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
 
-# Data and Models
-*.xlsx
-*.pkl
-*.h5
+# IDE / Code Editor Settings
+.vscode/
+.idea/
+*.swp
+*.swo
 
-# OS generated files
+# OS Generated Files
 .DS_Store
 Thumbs.db
+desktop.ini
+
+# Logs & Temporary Runs
+*.log
