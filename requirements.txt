@@ -7,4 +7,5 @@ traci
 sumolib
 matplotlib
 seaborn
+pyyaml
 -e .

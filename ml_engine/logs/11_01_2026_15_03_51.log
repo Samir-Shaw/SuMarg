@@ -1,0 +1,7 @@
+[ 2026-11-01 15:03:51,385 ] 28 root - INFO - Data Ingestion component started.
+[ 2026-11-01 15:03:51,386 ] 37 root - INFO - Reading raw data from: C:\Users\karan\OneDrive\Desktop\SuMarg\ml_engine\data\raw\braking_data.csv
+[ 2026-11-01 15:03:51,431 ] 39 root - INFO - Raw data shape: (27231, 7)
+[ 2026-11-01 15:03:51,432 ] 45 root - INFO - Splitting data: test_size = 0.2
+[ 2026-11-01 15:03:51,541 ] 57 root - INFO - Train data saved: C:\Users\karan\OneDrive\Desktop\SuMarg\ml_engine\data\processed\train.csv (21784 rows)
+[ 2026-11-01 15:03:51,542 ] 58 root - INFO - Test data saved: C:\Users\karan\OneDrive\Desktop\SuMarg\ml_engine\data\processed\test.csv (5447 rows)
+[ 2026-11-01 15:03:51,542 ] 59 root - INFO - Data Ingestion completed successfully.

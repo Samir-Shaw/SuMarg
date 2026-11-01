@@ -12,5 +12,6 @@ Requires-Dist: traci
 Requires-Dist: sumolib
 Requires-Dist: matplotlib
 Requires-Dist: seaborn
+Requires-Dist: pyyaml
 Dynamic: author
 Dynamic: requires-dist
