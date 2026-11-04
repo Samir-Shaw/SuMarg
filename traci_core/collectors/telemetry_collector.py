@@ -18,12 +18,17 @@ def calculate_row_data(vehicle_speed: float, leader_distance: float, leader_spee
     else:
         time_to_collision = 99.0
 
-    # 3. Base Target Speed Calculation
+    # Determine V2V Emergency Flag (1 if critical gap/TTC or random emergency broadcast simulation, else 0)
+    # Approximately 15% to 20% samples will feature V2V emergency active scenarios
+    is_critical = (noisy_distance <= 8.0 or time_to_collision <= 1.5)
+    v2v_emergency_flag = 1 if (is_critical or random.random() < 0.12) else 0
+
+    # 3. Base Target Speed Calculation incorporating V2V Sensor Fusion
     min_safe_gap = 6.0
     safe_following_gap = min_safe_gap + (noisy_ego_speed * 1.5)
 
-    if noisy_distance <= min_safe_gap or time_to_collision <= 1.2:
-        # Full stop / Emergency braking
+    if v2v_emergency_flag == 1 or noisy_distance <= min_safe_gap or time_to_collision <= 1.2:
+        # Full stop / Emergency braking triggered by V2V or On-board sensors
         target_speed = 0.0
 
     elif noisy_distance < safe_following_gap:
@@ -55,7 +60,8 @@ def calculate_row_data(vehicle_speed: float, leader_distance: float, leader_spee
         round(relative_speed, 2),
         round(time_to_collision, 2),
         round(speed_limit, 2),
-        round(target_speed, 2)
+        int(v2v_emergency_flag),  # <--- Naya V2V feature added
+        round(target_speed, 2)    # Target label at the end
     ]
 
 def generate_telemetry_dataset(num_samples: int = TOTAL_SAMPLES):
@@ -68,6 +74,7 @@ def generate_telemetry_dataset(num_samples: int = TOTAL_SAMPLES):
         "relative_speed",
         "time_to_collision",
         "speed_limit",
+        "v2v_emergency_flag", # <--- Header included
         "target_speed"
     ]
 
@@ -85,7 +92,7 @@ def generate_telemetry_dataset(num_samples: int = TOTAL_SAMPLES):
             row = calculate_row_data(vehicle_speed, leader_distance, leader_speed, speed_limit)
             writer.writerow(row)
 
-    print(f"Successfully generated {num_samples} samples at: {DATASET_RAW_PATH}")
+    print(f"Successfully generated {num_samples} samples with V2V flag at: {DATASET_RAW_PATH}")
 
 if __name__ == "__main__":
     generate_telemetry_dataset()
