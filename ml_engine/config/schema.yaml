@@ -5,6 +5,7 @@ COLUMNS:
   relative_speed: float64
   time_to_collision: float64
   speed_limit: float64
+  v2v_emergency_flag: int64   
   target_speed: float64
 
 NUMERICAL_COLUMNS:
@@ -14,5 +15,5 @@ NUMERICAL_COLUMNS:
   - relative_speed
   - time_to_collision
   - speed_limit
-
+  - v2v_emergency_flag        
 TARGET_COLUMN: target_speed
