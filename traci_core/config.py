@@ -24,3 +24,7 @@ STEP_LENGTH = 0.1  # 100ms lockstep simulation tick
 EGO_VEHICLE_ID = "ego_car"
 MAX_SPEED = 22.0       # ~80 km/h
 EMERGENCY_DECEL = 9.0  # m/s^2 emergency braking limit
+
+# GUI Camera Tracking Settings
+DEFAULT_VIEW_ID = "View #0"
+EGO_CAMERA_ZOOM = 1200

@@ -31,7 +31,7 @@ class PredictPipeline:
 
     def predict(self, features: pd.DataFrame) -> np.ndarray:
         """
-        Input DataFrame par RobustScaler apply karke target speed predict karta hai.
+        Input DataFrame par preprocessor transform apply karke target speed predict karta hai.
         """
         try:
             scaled_features = self.preprocessor.transform(features)
@@ -49,10 +49,11 @@ class PredictPipeline:
         leader_distance: float, 
         relative_speed: float = None, 
         time_to_collision: float = None, 
-        speed_limit: float = 13.89
+        speed_limit: float = 13.89,
+        v2v_emergency_flag: int = 0
     ) -> float:
         """
-        Direct TraCI simulation controller call ke liye method.
+        Direct TraCI simulation controller call ke liye method, supporting V2V safety flag.
         """
         try:
             if relative_speed is None:
@@ -64,14 +65,17 @@ class PredictPipeline:
                 else:
                     time_to_collision = 99.0
 
-            input_df = pd.DataFrame([{
+            input_dict = {
                 "vehicle_speed": float(ego_speed),
                 "leader_speed": float(leader_speed),
                 "leader_distance": float(leader_distance),
                 "relative_speed": float(relative_speed),
                 "time_to_collision": float(time_to_collision),
-                "speed_limit": float(speed_limit)
-            }])
+                "speed_limit": float(speed_limit),
+                "v2v_emergency_flag": int(v2v_emergency_flag) # <--- Naya V2V feature added
+            }
+
+            input_df = pd.DataFrame([input_dict])
 
             pred_speed = self.predict(input_df)[0]
             return float(pred_speed)
@@ -83,18 +87,20 @@ class PredictPipeline:
 if __name__ == "__main__":
     predictor = PredictPipeline()
 
-    # Test 1: Emergency Braking Zone
+    # Test 1: Emergency Braking Zone with V2V Active
     emergency_speed = predictor.predict_target_speed(
         ego_speed=12.0,
         leader_speed=2.0,
-        leader_distance=4.0
+        leader_distance=4.0,
+        v2v_emergency_flag=1
     )
-    print(f"[Test 1 - Emergency Stop] Distance: 4m -> Target Speed: {emergency_speed:.2f} m/s")
+    print(f"[Test 1 - V2V Emergency Stop] Distance: 4m -> Target Speed: {emergency_speed:.2f} m/s")
 
     # Test 2: Safe Cruising
     cruise_speed = predictor.predict_target_speed(
         ego_speed=10.0,
         leader_speed=13.89,
-        leader_distance=80.0
+        leader_distance=80.0,
+        v2v_emergency_flag=0
     )
     print(f"[Test 2 - Safe Cruising]  Distance: 80m -> Target Speed: {cruise_speed:.2f} m/s")

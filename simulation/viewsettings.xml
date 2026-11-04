@@ -1,0 +1,12 @@
+<viewsettings>
+    <scheme name="standard">
+        <vehicles 
+            vehicleMode="0" 
+            vehicleQuality="2" 
+            vehicleSize_minSize="2.0" 
+            vehicleSize_exaggeration="2.5" 
+            showBlinker="true">
+        </vehicles>
+    </scheme>
+    <delay value="100"/>
+</viewsettings>
