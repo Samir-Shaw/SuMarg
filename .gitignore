@@ -1,25 +1,20 @@
-# Virtual Environment (Sabse zaroori - push block hone se bachane ke liye)
 venv/
 env/
 .venv/
 ENV/
 
-# Python Cache & Bytecode (Auto-generated temporary files)
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 
-# IDE / Code Editor Settings
 .vscode/
 .idea/
 *.swp
 *.swo
 
-# OS Generated Files
 .DS_Store
 Thumbs.db
 desktop.ini
 
-# Logs & Temporary Runs
 *.log
