@@ -2,7 +2,7 @@ import traci
 from ml_engine.src.logger import logging
 
 class EmergencyBrakingScenario:
-    def __init__(self, lead_id="lead_car", trigger_step=20, stop_duration=40, resume_speed=11.0):
+    def __init__(self, lead_id="lead_car", trigger_step=50, stop_duration=40, resume_speed=11.0):
         self.lead_id = lead_id
         self.trigger_step = trigger_step
         self.stop_duration = stop_duration
@@ -19,13 +19,12 @@ class EmergencyBrakingScenario:
         if not self.initial_speed_set:
             traci.vehicle.setSpeedMode(self.lead_id, 31)
             traci.vehicle.setSpeed(self.lead_id, 13.0)
-            # Shuruat mein Blue color
             traci.vehicle.setColor(self.lead_id, (0, 150, 255, 255))
             self.initial_speed_set = True
 
         lead_pos = traci.vehicle.getPosition(self.lead_id)
 
-        # Phase 1: Sudden Hard Emergency Brake + V2V Broadcast
+        #Sudden Hard Emergency Brake + V2V Broadcast
         if current_step >= self.trigger_step and not self.brake_applied:
             traci.vehicle.setSpeedMode(self.lead_id, 0)
             traci.vehicle.setSpeed(self.lead_id, 0.0)
@@ -34,7 +33,7 @@ class EmergencyBrakingScenario:
             logging.warning(f"Step {current_step}: Lead car performed sudden EMERGENCY BRAKE!")
             self.brake_applied = True
 
-        # Keep broadcasting emergency signal while stopped
+        #Keep broadcasting emergency signal while stopped
         if self.brake_applied and not self.resumed and v2v_module:
             v2v_module.broadcast(
                 sender_id=self.lead_id,
@@ -44,7 +43,7 @@ class EmergencyBrakingScenario:
                 pos=lead_pos
             )
 
-        # Phase 2: Resume driving after stop duration
+        #Resume driving after stop duration
         resume_step = self.trigger_step + self.stop_duration
         if current_step >= resume_step and not self.resumed:
             traci.vehicle.setSpeedMode(self.lead_id, 31)
