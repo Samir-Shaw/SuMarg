@@ -1,30 +1,25 @@
 from pathlib import Path
 
-# Automatically detect 'SuMarg/' project root directory
 ROOT_DIR = Path(__file__).resolve().parent.parent
-
-# Simulation Paths
+# simulation paths
 SIM_CONFIG_PATH = ROOT_DIR / "simulation" / "osm.sumocfg"
 
-# ML Engine Data Paths
+# ml engine data paths
 DATASET_RAW_PATH = ROOT_DIR / "ml_engine" / "data" / "raw" / "braking_data.csv"
 DATASET_PROCESSED_DIR = ROOT_DIR / "ml_engine" / "data" / "processed"
 
-# ML Engine Artifacts Paths (Directly synced with DataTransformation & ModelTrainer)
+# ml engine artifacts paths
 ARTIFACTS_DIR = ROOT_DIR / "ml_engine" / "artifacts"
 PREPROCESSOR_PATH = ARTIFACTS_DIR / "preprocessor.pkl"
 MODEL_PATH = ARTIFACTS_DIR / "model.pkl"
 METRICS_PATH = ARTIFACTS_DIR / "metrics.json"
 STATUS_PATH = ARTIFACTS_DIR / "status.txt"
 
-# Simulation Hyperparameters
-STEP_LENGTH = 0.1  # 100ms lockstep simulation tick
+STEP_LENGTH = 0.1  
 
-# Ego Vehicle Constants
 EGO_VEHICLE_ID = "ego_car"
-MAX_SPEED = 22.0       # ~80 km/h
-EMERGENCY_DECEL = 9.0  # m/s^2 emergency braking limit
+MAX_SPEED = 22.0       
+EMERGENCY_DECEL = 9.0  
 
-# GUI Camera Tracking Settings
 DEFAULT_VIEW_ID = "View #0"
 EGO_CAMERA_ZOOM = 1200
