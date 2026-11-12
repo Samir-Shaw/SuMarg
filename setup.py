@@ -4,9 +4,6 @@ from typing import List
 HYPHEN_E_DOT = "-e ."
 
 def get_requirements(file_path: str) -> List[str]:
-    """
-    Reads requirements.txt and returns list of dependencies.
-    """
     requirements = []
     with open(file_path, "r", encoding="utf-8") as file_obj:
         requirements = file_obj.readlines()

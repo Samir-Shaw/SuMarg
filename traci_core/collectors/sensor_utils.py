@@ -128,3 +128,37 @@ class SensorUtils:
             "time_to_collision": round(radar["ttc"], 2),
             "speed_limit": round(telemetry["speed_limit"], 2)
         }
+    @staticmethod
+    def get_overtaking_features_for_ml(
+        veh_id: str,
+        active_vehicles: list,
+        radar_range: float = 100.0,
+        safety_margin: float = 18.0
+    ) -> Optional[Dict[str, Any]]:
+        """
+        OvertakingPredictPipeline ke exact 7 features extract karta hai:
+        [ego_speed, lead_distance, lead_speed, left_lane_available, right_lane_available, left_gap, right_gap]
+        """
+        telemetry = SensorUtils.get_vehicle_telemetry(veh_id)
+        if not telemetry:
+            return None
+
+        radar = SensorUtils.detect_leader(veh_id, radar_range=radar_range, current_speed=telemetry["speed"])
+        surroundings = SensorUtils.scan_360_surroundings(
+            veh_id, active_vehicles=active_vehicles, safety_margin=safety_margin
+        )
+
+        if not surroundings.get("valid", False):
+            return None
+
+        return {
+            "ego_speed": round(telemetry["speed"], 2),
+            "lead_distance": round(radar["gap"], 2),
+            "lead_speed": round(radar["leader_speed"], 2),
+            "left_lane_available": 1 if surroundings["has_left"] else 0,
+            "right_lane_available": 1 if surroundings["has_right"] else 0,
+            "left_gap": round(float(surroundings["left_gap"]), 2),
+            "right_gap": round(float(surroundings["right_gap"]), 2),
+            "current_lane": surroundings["current_lane"],
+            "total_lanes": surroundings["total_lanes"]
+        }
