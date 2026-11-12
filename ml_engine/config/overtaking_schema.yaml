@@ -1,0 +1,20 @@
+COLUMNS:
+  ego_speed: float64
+  lead_distance: float64
+  lead_speed: float64
+  left_lane_available: int64
+  right_lane_available: int64
+  left_gap: float64
+  right_gap: float64
+  decision: int64
+
+NUMERICAL_COLUMNS:
+  - ego_speed
+  - lead_distance
+  - lead_speed
+  - left_lane_available
+  - right_lane_available
+  - left_gap
+  - right_gap
+
+TARGET_COLUMN: decision
