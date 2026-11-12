@@ -1,7 +1,6 @@
 import csv
 import sys
 import random
-import math
 from pathlib import Path
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
@@ -9,29 +8,27 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.append(str(ROOT_DIR))
 
 import traci
-from traci_core.config import DATASET_RAW_PATH, SIM_CONFIG_PATH, STEP_LENGTH, EGO_VEHICLE_ID, MAX_SPEED
+from traci_core.config import ROOT_DIR, SIM_CONFIG_PATH, STEP_LENGTH, EGO_VEHICLE_ID
 from traci_core.collectors.sensor_utils import SensorUtils
-from traci_core.collectors.v2v_module import V2VModule
-from traci_core.scenarios import EmergencyBrakingScenario
 
+OVERTAKE_DATASET_RAW_PATH = ROOT_DIR / "ml_engine" / "data" / "raw" / "overtaking_data.csv"
 TOTAL_SAMPLES = 50000
 
 
-def run_sumo_data_generation(target_samples: int = TOTAL_SAMPLES):
-    DATASET_RAW_PATH.parent.mkdir(parents=True, exist_ok=True)
+def run_overtaking_data_generation(target_samples: int = TOTAL_SAMPLES):
+    OVERTAKE_DATASET_RAW_PATH.parent.mkdir(parents=True, exist_ok=True)
 
     headers = [
-        "vehicle_speed",
-        "leader_speed",
-        "leader_distance",
-        "relative_speed",
-        "time_to_collision",
-        "speed_limit",
-        "v2v_emergency_flag",
-        "target_speed"
+        "ego_speed",
+        "lead_distance",
+        "lead_speed",
+        "left_lane_available",
+        "right_lane_available",
+        "left_gap",
+        "right_gap",
+        "decision"
     ]
 
-    # Fast headless mode
     sumo_cmd = [
         "sumo",
         "-c", str(SIM_CONFIG_PATH),
@@ -41,117 +38,137 @@ def run_sumo_data_generation(target_samples: int = TOTAL_SAMPLES):
     ]
 
     samples_collected = 0
-    print(f"Starting Headless SUMO to capture {target_samples} calibrated real-physics samples...")
+    class_counts = {0: 0, 1: 0, 2: 0}
+    episode = 0
 
-    with open(DATASET_RAW_PATH, mode="w", newline="", encoding="utf-8") as file:
+    print(f"Starting Headless SUMO to capture {target_samples} calibrated overtaking telemetry samples...")
+
+    with open(OVERTAKE_DATASET_RAW_PATH, mode="w", newline="", encoding="utf-8") as file:
         writer = csv.writer(file)
         writer.writerow(headers)
 
         while samples_collected < target_samples:
+            episode += 1
             traci.start(sumo_cmd)
-            
-            v2v = V2VModule(comm_range_meters=150.0)
-            scenario = EmergencyBrakingScenario(
-                lead_id="lead_car",
-                trigger_step=random.randint(35, 65),
-                stop_duration=random.randint(30, 45),
-                resume_speed=11.0
-            )
+
             step_count = 0
+            bg_counter = 0
+            obstacle_trigger = random.randint(40, 80)
 
             while traci.simulation.getMinExpectedNumber() > 0 and samples_collected < target_samples:
                 traci.simulationStep()
                 step_count += 1
                 active_vehicles = traci.vehicle.getIDList()
 
-                # Scenario execution (Emergency brake trigger & V2V broadcast)
-                scenario.update(current_step=step_count, active_vehicles=active_vehicles, v2v_module=v2v)
+                if step_count > 15 and EGO_VEHICLE_ID not in active_vehicles:
+                    break
 
-                # Ego vehicle extraction
+                # A. Dynamic Obstacle Waves on Lead Car
+                if "lead_car" in active_vehicles:
+                    if step_count % obstacle_trigger == 0:
+                        traci.vehicle.setSpeed("lead_car", random.uniform(1.5, 6.0))
+                    elif step_count % obstacle_trigger == (obstacle_trigger // 2):
+                        traci.vehicle.setSpeed("lead_car", random.uniform(11.0, 14.0))
+
+                # B. Ego Lane Exploration (Captures both OVERTAKE_LEFT & OVERTAKE_RIGHT scenarios)
+                if EGO_VEHICLE_ID in active_vehicles and step_count % 120 == 0:
+                    try:
+                        traci.vehicle.changeLane(EGO_VEHICLE_ID, random.choice([0, 1]), 2.0)
+                    except traci.TraCIException:
+                        pass
+
+                # C. Dynamic Adjacent Traffic Injection
+                if step_count % 25 == 0 and EGO_VEHICLE_ID in active_vehicles:
+                    bg_counter += 1
+                    bg_id = f"dyn_ep{episode}_{bg_counter}"
+                    try:
+                        traci.vehicle.add(
+                            vehID=bg_id,
+                            routeID="r_loop",
+                            typeID="traffic_car",
+                            depart="now",
+                            departLane=random.choice(["0", "1"]),
+                            departPos="free",
+                            departSpeed=str(random.uniform(6.5, 13.5))
+                        )
+                    except traci.TraCIException:
+                        pass
+
+                # D. Ego Vehicle Telemetry & Labeling via SensorUtils
                 if EGO_VEHICLE_ID in active_vehicles:
                     telemetry = SensorUtils.get_vehicle_telemetry(EGO_VEHICLE_ID)
                     if not telemetry:
-                        v2v.step_cleanup()
                         continue
 
                     ego_speed = telemetry["speed"]
-                    speed_limit = telemetry["speed_limit"]
-                    ego_pos = traci.vehicle.getPosition(EGO_VEHICLE_ID)
-
-                    # Radar ground truth readings
                     radar = SensorUtils.detect_leader(EGO_VEHICLE_ID, radar_range=100.0, current_speed=ego_speed)
-                    leader_speed = radar["leader_speed"]
-                    leader_gap = radar["gap"]
-                    leader_id = radar.get("leader_id")
+                    lead_speed = radar["leader_speed"]
+                    lead_gap = radar["gap"]
 
-                    # V2V module checks
-                    v2v_alerts = v2v.receive_for_vehicle(EGO_VEHICLE_ID, ego_pos)
-                    v2v_emergency = any(msg.get("event") == "EMERGENCY_BRAKE" for msg in v2v_alerts)
-                    v2v_flag = 1 if v2v_emergency else 0
+                    lateral = SensorUtils.scan_360_surroundings(
+                        ego_id=EGO_VEHICLE_ID,
+                        active_vehicles=active_vehicles,
+                        safety_margin=18.0
+                    )
+                    if not lateral.get("valid"):
+                        continue
 
-                    # 1. Physics Engine Ground Truth Calculation (Consistent Distance & Responsive Restart)
-                    standstill_gap = 5.5   # Consistent safe stopping buffer (meters)
-                    comfort_decel = 2.8    # Standard smooth braking deceleration (m/s^2)
+                    # 1. Physics Ground Truth Decision with Driver Hesitation Boundary
+                    critical_dist = 22.0 + random.gauss(0, 1.4)
+                    safety_margin = 18.0 + random.gauss(0, 1.6)
+                    slow_thresh = 7.5
 
-                    if v2v_flag == 1 or leader_gap <= standstill_gap:
-                        # Smooth parabolic kinematic deceleration curve: v = sqrt(2 * a * d)
-                        effective_gap = max(0.0, leader_gap - standstill_gap)
-                        target_speed = math.sqrt(2.0 * comfort_decel * effective_gap)
-                        
-                        # Full stop deadband buffer
-                        if leader_gap <= 4.0:
-                            target_speed = 0.0
+                    is_front_blocked = (lead_gap <= critical_dist) and (lead_speed <= slow_thresh)
+                    left_really_safe = lateral["has_left"] and (lateral["left_gap"] >= safety_margin)
+                    right_really_safe = lateral["has_right"] and (lateral["right_gap"] >= safety_margin)
 
-                    elif leader_gap < 75.0 and leader_id and leader_id in active_vehicles:
-                        desired_gap = standstill_gap + (ego_speed * 1.2)
-
-                        # Standstill Takeoff: Ego slow/stopped, front car starts rolling
-                        if ego_speed < 1.0 and leader_speed > 0.5 and leader_gap > 4.5:
-                            target_speed = min(leader_speed, 4.0)
-                        elif leader_gap < desired_gap:
-                            ratio = max(0.0, (leader_gap - standstill_gap) / max(1.0, (desired_gap - standstill_gap)))
-                            target_speed = leader_speed * ratio
-                        else:
-                            headway_ratio = min(1.0, (leader_gap - desired_gap) / 30.0)
-                            target_speed = leader_speed + headway_ratio * (speed_limit - leader_speed)
+                    if not is_front_blocked:
+                        decision = 0  # KEEP_LANE
+                    elif left_really_safe:
+                        decision = 1  # OVERTAKE_LEFT
+                    elif right_really_safe:
+                        decision = 2  # OVERTAKE_RIGHT
                     else:
-                        target_speed = min(MAX_SPEED, speed_limit)
+                        decision = 0  # KEEP_LANE (Blocked)
 
-                    target_speed = max(0.0, min(speed_limit, target_speed))
+                    # 2. Realistic Automotive Sensor Jitter (Prevents 99.9% Overfitting)
+                    noisy_ego_speed = max(0.0, ego_speed + random.gauss(0, 0.30))
+                    noisy_lead_dist = max(0.5, min(100.0, lead_gap + random.gauss(0, 1.20)))
+                    noisy_lead_speed = max(0.0, lead_speed + random.gauss(0, 0.50))
+                    noisy_left_gap = max(0.0, min(100.0, lateral["left_gap"] + random.gauss(0, 1.50)))
+                    noisy_right_gap = max(0.0, min(100.0, lateral["right_gap"] + random.gauss(0, 1.50)))
 
-                    # 2. Realistic, Balanced Automotive Sensor Jitter
-                    noisy_ego_speed = max(0.0, ego_speed + random.gauss(0, 0.15))
-                    noisy_leader_speed = max(0.0, leader_speed + random.gauss(0, 0.20))
-                    noisy_gap = max(0.5, leader_gap + random.gauss(0, 0.40))
+                    sensed_left_avail = 1 if (lateral["has_left"] and noisy_left_gap >= 18.0) else 0
+                    sensed_right_avail = 1 if (lateral["has_right"] and noisy_right_gap >= 18.0) else 0
 
-                    # Derived relative metrics from noisy measurements
-                    noisy_relative_speed = noisy_ego_speed - noisy_leader_speed
-                    if noisy_relative_speed > 0.1:
-                        noisy_ttc = min(99.0, max(0.1, noisy_gap / noisy_relative_speed))
-                    else:
-                        noisy_ttc = 99.0
+                    # Occasional radar occlusion flicker (2.5%)
+                    if random.random() < 0.025:
+                        sensed_left_avail = 1 - sensed_left_avail
+                    if random.random() < 0.025:
+                        sensed_right_avail = 1 - sensed_right_avail
 
                     writer.writerow([
                         round(noisy_ego_speed, 2),
-                        round(noisy_leader_speed, 2),
-                        round(noisy_gap, 2),
-                        round(noisy_relative_speed, 2),
-                        round(noisy_ttc, 2),
-                        round(speed_limit, 2),
-                        v2v_flag,
-                        round(target_speed, 2)
+                        round(noisy_lead_dist, 2),
+                        round(noisy_lead_speed, 2),
+                        sensed_left_avail,
+                        sensed_right_avail,
+                        round(noisy_left_gap, 2),
+                        round(noisy_right_gap, 2),
+                        decision
                     ])
 
                     samples_collected += 1
-                    if samples_collected % 5000 == 0:
-                        print(f"Captured [{samples_collected}/{target_samples}] samples from SUMO...")
+                    class_counts[decision] += 1
 
-                v2v.step_cleanup()
+                    if samples_collected % 5000 == 0:
+                        print(f"Captured [{samples_collected}/{target_samples}] samples | Class counts: {class_counts}")
 
             traci.close()
 
-    print(f"\nDone! Successfully collected {samples_collected} calibrated SUMO samples at:\n{DATASET_RAW_PATH}")
+    print(f"\nDone! Successfully collected {samples_collected} calibrated SUMO samples at:\n{OVERTAKE_DATASET_RAW_PATH}")
+    print(f"Final Decision Distribution (0=KEEP, 1=LEFT, 2=RIGHT): {class_counts}")
 
 
 if __name__ == "__main__":
-    run_sumo_data_generation()
+    run_overtaking_data_generation()
