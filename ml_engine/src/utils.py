@@ -4,7 +4,17 @@ import pickle
 import yaml
 from pathlib import Path
 import numpy as np
-from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
+from sklearn.metrics import (
+    r2_score,
+    mean_squared_error,
+    mean_absolute_error,
+    accuracy_score,
+    f1_score,
+    precision_score,
+    recall_score,
+    classification_report,
+    confusion_matrix
+)
 
 from ml_engine.src.exception import CustomException
 from ml_engine.src.logger import logging
@@ -59,7 +69,7 @@ def read_yaml(file_path: Path) -> dict:
 
 def evaluate_models(X_train, y_train, X_test, y_test, models: dict) -> dict:
     """
-    Trains each model from dictionary and returns comprehensive evaluation metrics.
+    Trains each regression model from dictionary and returns comprehensive evaluation metrics.
     """
     try:
         report = {}
@@ -82,6 +92,43 @@ def evaluate_models(X_train, y_train, X_test, y_test, models: dict) -> dict:
                 "mae": round(mae, 4)
             }
             logging.info(f"Trained {model_name} -> R2: {r2:.4f}, RMSE: {rmse:.4f}, MAE: {mae:.4f}")
+
+        return report
+    except Exception as e:
+        raise CustomException(e, sys)
+
+
+def evaluate_classifiers(X_train, y_train, X_test, y_test, models: dict) -> dict:
+    """
+    Trains each classification model from dictionary and returns comprehensive evaluation metrics.
+    """
+    try:
+        report = {}
+        for model_name, model in models.items():
+            # Train classifier
+            model.fit(X_train, y_train)
+
+            # Predictions
+            y_pred = model.predict(X_test)
+
+            # Metrics
+            acc = float(accuracy_score(y_test, y_pred))
+            macro_f1 = float(f1_score(y_test, y_pred, average="macro"))
+            weighted_f1 = float(f1_score(y_test, y_pred, average="weighted"))
+            macro_prec = float(precision_score(y_test, y_pred, average="macro", zero_division=0))
+            macro_rec = float(recall_score(y_test, y_pred, average="macro", zero_division=0))
+
+            report[model_name] = {
+                "model_obj": model,
+                "accuracy": round(acc, 4),
+                "macro_f1": round(macro_f1, 4),
+                "weighted_f1": round(weighted_f1, 4),
+                "macro_precision": round(macro_prec, 4),
+                "macro_recall": round(macro_rec, 4),
+                "confusion_matrix": confusion_matrix(y_test, y_pred).tolist(),
+                "classification_report": classification_report(y_test, y_pred, output_dict=True)
+            }
+            logging.info(f"Trained {model_name} -> Accuracy: {acc:.4f}, Macro F1: {macro_f1:.4f}")
 
         return report
     except Exception as e:

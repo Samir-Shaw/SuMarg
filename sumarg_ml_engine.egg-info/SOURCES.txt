@@ -9,6 +9,10 @@ ml_engine/src/components/data_ingestion.py
 ml_engine/src/components/data_transformation.py
 ml_engine/src/components/data_validation.py
 ml_engine/src/components/model_trainer.py
+ml_engine/src/components/overtaking_ingestion.py
+ml_engine/src/components/overtaking_trainer.py
+ml_engine/src/components/overtaking_transformation.py
+ml_engine/src/components/overtaking_validation.py
 ml_engine/src/pipeline/__init__.py
 ml_engine/src/pipeline/predict_pipeline.py
 sumarg_ml_engine.egg-info/PKG-INFO
@@ -20,6 +24,7 @@ traci_core/__init__.py
 traci_core/config.py
 traci_core/runner.py
 traci_core/collectors/__init__.py
+traci_core/collectors/collect_overtake_data.py
 traci_core/collectors/sensor_utils.py
 traci_core/collectors/telemetry_collector.py
 traci_core/collectors/v2v_module.py

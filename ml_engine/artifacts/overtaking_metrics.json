@@ -1,0 +1,116 @@
+{
+    "best_model": "Gradient Boosting",
+    "accuracy": 0.9836,
+    "macro_f1": 0.9741,
+    "weighted_f1": 0.9836,
+    "macro_precision": 0.9745,
+    "macro_recall": 0.9737,
+    "confusion_matrix": [
+        [
+            7326,
+            49,
+            26
+        ],
+        [
+            58,
+            1222,
+            6
+        ],
+        [
+            21,
+            4,
+            1288
+        ]
+    ],
+    "classification_report": {
+        "0": {
+            "precision": 0.9893315327481431,
+            "recall": 0.9898662342926632,
+            "f1-score": 0.9895988112927192,
+            "support": 7401.0
+        },
+        "1": {
+            "precision": 0.9584313725490196,
+            "recall": 0.9502332814930016,
+            "f1-score": 0.9543147208121827,
+            "support": 1286.0
+        },
+        "2": {
+            "precision": 0.9757575757575757,
+            "recall": 0.9809596344249809,
+            "f1-score": 0.9783516900873528,
+            "support": 1313.0
+        },
+        "accuracy": 0.9836,
+        "macro avg": {
+            "precision": 0.9745068270182461,
+            "recall": 0.9736863834035486,
+            "f1-score": 0.9740884073974182,
+            "support": 10000.0
+        },
+        "weighted avg": {
+            "precision": 0.9835755115936743,
+            "recall": 0.9836,
+            "f1-score": 0.9835845302426577,
+            "support": 10000.0
+        }
+    },
+    "all_models": {
+        "Logistic Regression": {
+            "accuracy": 0.9532,
+            "macro_f1": 0.9315,
+            "weighted_f1": 0.9543,
+            "macro_precision": 0.9061,
+            "macro_recall": 0.9614
+        },
+        "K-Neighbors Classifier": {
+            "accuracy": 0.9772,
+            "macro_f1": 0.9643,
+            "weighted_f1": 0.9772,
+            "macro_precision": 0.9609,
+            "macro_recall": 0.9678
+        },
+        "Decision Tree": {
+            "accuracy": 0.9799,
+            "macro_f1": 0.9685,
+            "weighted_f1": 0.98,
+            "macro_precision": 0.9617,
+            "macro_recall": 0.9757
+        },
+        "Random Forest": {
+            "accuracy": 0.9836,
+            "macro_f1": 0.9738,
+            "weighted_f1": 0.9836,
+            "macro_precision": 0.9737,
+            "macro_recall": 0.9739
+        },
+        "Gradient Boosting": {
+            "accuracy": 0.9836,
+            "macro_f1": 0.9741,
+            "weighted_f1": 0.9836,
+            "macro_precision": 0.9745,
+            "macro_recall": 0.9737
+        },
+        "XGBoost": {
+            "accuracy": 0.981,
+            "macro_f1": 0.97,
+            "weighted_f1": 0.981,
+            "macro_precision": 0.9696,
+            "macro_recall": 0.9704
+        },
+        "CatBoost": {
+            "accuracy": 0.9815,
+            "macro_f1": 0.9712,
+            "weighted_f1": 0.9817,
+            "macro_precision": 0.96,
+            "macro_recall": 0.9832
+        },
+        "LightGBM": {
+            "accuracy": 0.982,
+            "macro_f1": 0.972,
+            "weighted_f1": 0.9821,
+            "macro_precision": 0.963,
+            "macro_recall": 0.9815
+        }
+    }
+}
