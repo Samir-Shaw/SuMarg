@@ -63,7 +63,7 @@ class DataTransformation:
 
             is_valid = self.check_validation_status()
             if not is_valid:
-                raise CustomException("Data validation failed! Transformation pipeline abort kiya ja raha hai.", sys)
+                raise CustomException("Data validation failed! Transformation pipeline aborted", sys)
 
             train_df = pd.read_csv(self.data_transformation_config.train_data_path)
             test_df = pd.read_csv(self.data_transformation_config.test_data_path)

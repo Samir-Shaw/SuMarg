@@ -68,13 +68,11 @@ class ModelTrainer:
 
             logging.info(f"Best Model Selected: {best_model_name} with R2: {best_model_details['r2_score']:.4f}")
 
-            # Save best model artifact (model.pkl)
             save_object(
                 file_path=str(self.model_trainer_config.trained_model_file_path),
                 obj=best_model_obj
             )
 
-            # Save evaluation metrics (metrics.json)
             metrics_summary = {
                 "best_model": best_model_name,
                 "r2_score": best_model_details["r2_score"],

@@ -63,21 +63,21 @@ def run_overtaking_data_generation(target_samples: int = TOTAL_SAMPLES):
                 if step_count > 15 and EGO_VEHICLE_ID not in active_vehicles:
                     break
 
-                # A. Dynamic Obstacle Waves on Lead Car
+                #A.Dynamic Obstacle Waves on Lead Car
                 if "lead_car" in active_vehicles:
                     if step_count % obstacle_trigger == 0:
                         traci.vehicle.setSpeed("lead_car", random.uniform(1.5, 6.0))
                     elif step_count % obstacle_trigger == (obstacle_trigger // 2):
                         traci.vehicle.setSpeed("lead_car", random.uniform(11.0, 14.0))
 
-                # B. Ego Lane Exploration (Captures both OVERTAKE_LEFT & OVERTAKE_RIGHT scenarios)
+                #B.Ego Lane Exploration (Captures both OVERTAKE_LEFT & OVERTAKE_RIGHT scenarios)
                 if EGO_VEHICLE_ID in active_vehicles and step_count % 120 == 0:
                     try:
                         traci.vehicle.changeLane(EGO_VEHICLE_ID, random.choice([0, 1]), 2.0)
                     except traci.TraCIException:
                         pass
 
-                # C. Dynamic Adjacent Traffic Injection
+                #C.Dynamic Adjacent Traffic Injection
                 if step_count % 25 == 0 and EGO_VEHICLE_ID in active_vehicles:
                     bg_counter += 1
                     bg_id = f"dyn_ep{episode}_{bg_counter}"
@@ -94,7 +94,7 @@ def run_overtaking_data_generation(target_samples: int = TOTAL_SAMPLES):
                     except traci.TraCIException:
                         pass
 
-                # D. Ego Vehicle Telemetry & Labeling via SensorUtils
+                #D.Ego Vehicle Telemetry & Labeling via SensorUtils
                 if EGO_VEHICLE_ID in active_vehicles:
                     telemetry = SensorUtils.get_vehicle_telemetry(EGO_VEHICLE_ID)
                     if not telemetry:
@@ -113,7 +113,7 @@ def run_overtaking_data_generation(target_samples: int = TOTAL_SAMPLES):
                     if not lateral.get("valid"):
                         continue
 
-                    # 1. Physics Ground Truth Decision with Driver Hesitation Boundary
+                    #1.Physics Ground Truth Decision with Driver Hesitation Boundary
                     critical_dist = 22.0 + random.gauss(0, 1.4)
                     safety_margin = 18.0 + random.gauss(0, 1.6)
                     slow_thresh = 7.5
@@ -123,15 +123,15 @@ def run_overtaking_data_generation(target_samples: int = TOTAL_SAMPLES):
                     right_really_safe = lateral["has_right"] and (lateral["right_gap"] >= safety_margin)
 
                     if not is_front_blocked:
-                        decision = 0  # KEEP_LANE
+                        decision = 0  #KEEP_LANE
                     elif left_really_safe:
-                        decision = 1  # OVERTAKE_LEFT
+                        decision = 1  #OVERTAKE_LEFT
                     elif right_really_safe:
-                        decision = 2  # OVERTAKE_RIGHT
+                        decision = 2  #OVERTAKE_RIGHT
                     else:
-                        decision = 0  # KEEP_LANE (Blocked)
+                        decision = 0  #KEEP_LANE (Blocked)
 
-                    # 2. Realistic Automotive Sensor Jitter (Prevents 99.9% Overfitting)
+                    #2.Realistic Automotive Sensor Jitter (Prevents 99.9% Overfitting)
                     noisy_ego_speed = max(0.0, ego_speed + random.gauss(0, 0.30))
                     noisy_lead_dist = max(0.5, min(100.0, lead_gap + random.gauss(0, 1.20)))
                     noisy_lead_speed = max(0.0, lead_speed + random.gauss(0, 0.50))
@@ -141,7 +141,7 @@ def run_overtaking_data_generation(target_samples: int = TOTAL_SAMPLES):
                     sensed_left_avail = 1 if (lateral["has_left"] and noisy_left_gap >= 18.0) else 0
                     sensed_right_avail = 1 if (lateral["has_right"] and noisy_right_gap >= 18.0) else 0
 
-                    # Occasional radar occlusion flicker (2.5%)
+                    #Occasional radar occlusion flicker (2.5%)
                     if random.random() < 0.025:
                         sensed_left_avail = 1 - sensed_left_avail
                     if random.random() < 0.025:

@@ -51,7 +51,6 @@ class OvertakingModelTrainer:
             logging.info(f"Initiating evaluation across {len(models)} candidate classifiers via utils.evaluate_classifiers.")
             model_report = evaluate_classifiers(X_train, y_train, X_test, y_test, models=models)
 
-            # Best model selection based on highest Macro F1 Score
             best_model_name = max(model_report, key=lambda k: model_report[k]["macro_f1"])
             best_model_details = model_report[best_model_name]
             best_model_obj = best_model_details["model_obj"]
@@ -64,13 +63,11 @@ class OvertakingModelTrainer:
                 f"with Macro F1: {best_model_details['macro_f1']:.4f} | Accuracy: {best_model_details['accuracy']:.4f}"
             )
 
-            # Save best model artifact (overtaking_model.pkl)
             save_object(
                 file_path=str(self.model_trainer_config.trained_model_file_path),
                 obj=best_model_obj
             )
 
-            # Save evaluation metrics (overtaking_metrics.json)
             metrics_summary = {
                 "best_model": best_model_name,
                 "accuracy": best_model_details["accuracy"],

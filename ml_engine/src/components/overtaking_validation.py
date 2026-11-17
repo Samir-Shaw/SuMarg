@@ -58,12 +58,12 @@ class OvertakingDataValidation:
                     validation_status = False
                     logging.error(f"Column [{col}] missing in overtaking datasets.")
 
-            # Null values check
+            #Null values check
             if train_df.isnull().sum().sum() > 0 or test_df.isnull().sum().sum() > 0:
                 validation_status = False
                 logging.error("Null values detected in overtaking datasets.")
 
-            # Valid target classes check (only 0, 1, 2 allowed)
+            #Valid target classes check (only 0, 1, 2 allowed)
             if not set(train_df["decision"].unique()).issubset({0, 1, 2}) or not set(test_df["decision"].unique()).issubset({0, 1, 2}):
                 validation_status = False
                 logging.error("Invalid class labels found in 'decision' column.")

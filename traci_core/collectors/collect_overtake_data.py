@@ -84,16 +84,16 @@ def run_overtaking_data_generation(target_samples: int = TOTAL_SAMPLES):
                     if step_count > 20 and EGO_VEHICLE_ID not in active_vehicles:
                         break
 
-                    # Dynamically assign lane based on whichever overtake side needs more samples
-                    # Lane 0 -> generates OVERTAKE_LEFT (1), Lane 1 -> generates OVERTAKE_RIGHT (2)
+                    #Dynamically assign lane based on whichever overtake side needs more samples
+                    #Lane 0 -> generates OVERTAKE_LEFT (1), Lane 1 -> generates OVERTAKE_RIGHT (2)
                     if step_count % 300 == 1:
                         assigned_lane = 0 if class_counts[1] <= class_counts[2] else 1
 
-                    # A. Maintain ego lane safely
+                    #A.Maintain ego lane safely
                     if EGO_VEHICLE_ID in active_vehicles:
                         maintain_lane_without_blocking_turns(EGO_VEHICLE_ID, assigned_lane)
 
-                    # B. Keep lead_car in same lane & create realistic slow obstacle waves
+                    #B.Keep lead_car in same lane & create realistic slow obstacle waves
                     if "lead_car" in active_vehicles:
                         maintain_lane_without_blocking_turns("lead_car", assigned_lane)
 
@@ -102,7 +102,7 @@ def run_overtaking_data_generation(target_samples: int = TOTAL_SAMPLES):
                         elif step_count % obstacle_trigger == (obstacle_trigger // 2):
                             traci.vehicle.setSpeed("lead_car", random.uniform(10.0, 14.0))
 
-                    # C. Dynamic Adjacent Traffic Injection
+                    #C.Dynamic Adjacent Traffic Injection
                     if step_count % 30 == 0 and EGO_VEHICLE_ID in active_vehicles:
                         bg_counter += 1
                         bg_id = f"dyn_ep{episode}_{bg_counter}"
@@ -120,7 +120,7 @@ def run_overtaking_data_generation(target_samples: int = TOTAL_SAMPLES):
                         except traci.TraCIException:
                             pass
 
-                    # D. Telemetry & Natural Subsampling
+                    #D.Telemetry & Natural Subsampling
                     if EGO_VEHICLE_ID in active_vehicles:
                         telemetry = SensorUtils.get_vehicle_telemetry(EGO_VEHICLE_ID)
                         if not telemetry:
@@ -156,7 +156,7 @@ def run_overtaking_data_generation(target_samples: int = TOTAL_SAMPLES):
                         else:
                             decision = 0
 
-                        # Keep natural realistic proportions (~45% KEEP, ~27% LEFT, ~27% RIGHT)
+                        #Keep natural realistic proportions (~45% KEEP, ~27% LEFT, ~27% RIGHT)
                         if decision == 0 and random.random() > 0.35:
                             continue
                         if decision == 1 and (class_counts[1] - class_counts[2]) > 1500:
@@ -164,7 +164,7 @@ def run_overtaking_data_generation(target_samples: int = TOTAL_SAMPLES):
                         if decision == 2 and (class_counts[2] - class_counts[1]) > 1500:
                             continue
 
-                        # Realistic Automotive Sensor Jitter
+                        #Realistic Automotive Sensor Jitter
                         noisy_ego_speed = max(0.0, ego_speed + random.gauss(0, 0.30))
                         noisy_lead_dist = max(0.5, min(100.0, lead_gap + random.gauss(0, 1.20)))
                         noisy_lead_speed = max(0.0, lead_speed + random.gauss(0, 0.50))

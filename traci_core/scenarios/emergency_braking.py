@@ -18,7 +18,7 @@ class EmergencyBrakingScenario:
             return
 
         try:
-            # 1. Initial State Setup
+            #Initial State Setup
             if not self.initial_speed_set:
                 traci.vehicle.setSpeedMode(self.lead_id, 31)
                 traci.vehicle.setSpeed(self.lead_id, 13.0)
@@ -27,7 +27,7 @@ class EmergencyBrakingScenario:
 
             lead_pos = traci.vehicle.getPosition(self.lead_id)
 
-            # 2. Emergency Brake Trigger
+            #Emergency Brake Trigger
             if current_step >= self.trigger_step and not self.brake_applied:
                 traci.vehicle.setSpeedMode(self.lead_id, 0)
                 traci.vehicle.setSpeed(self.lead_id, 0.0)
@@ -35,7 +35,7 @@ class EmergencyBrakingScenario:
                 logging.warning(f"Step {current_step}: Lead car performed sudden EMERGENCY BRAKE!")
                 self.brake_applied = True
 
-            # 3. Active V2V Broadcast during Emergency Window
+            #Active V2V Broadcast during Emergency Window
             if self.brake_applied and not self.resumed and v2v_module:
                 v2v_module.broadcast(
                     sender_id=self.lead_id,
@@ -45,7 +45,7 @@ class EmergencyBrakingScenario:
                     pos=lead_pos
                 )
 
-            # 4. Resume Driving Step
+            #Resume Driving Step
             resume_step = self.trigger_step + self.stop_duration
             if current_step >= resume_step and not self.resumed:
                 traci.vehicle.setSpeedMode(self.lead_id, 31)
@@ -54,7 +54,7 @@ class EmergencyBrakingScenario:
                 logging.info(f"Step {current_step}: Lead car resumed driving at {self.resume_speed} m/s.")
                 self.resumed = True
 
-            # 5. Route-End / Standstill Visual Tracking (Resume hone ke baad ka natural stop)
+            #Route-End / Standstill Visual Tracking (Resume hone ke baad ka natural stop)
             if self.resumed:
                 current_speed = traci.vehicle.getSpeed(self.lead_id)
                 if current_speed < 0.5:

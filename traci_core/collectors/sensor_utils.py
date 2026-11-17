@@ -43,7 +43,7 @@ class SensorUtils:
                 if relative_speed > 0.1:
                     ttc = min(99.0, max(0.1, gap / relative_speed))
                 else:
-                    ttc = 99.0  # Safe
+                    ttc = 99.0  #Safe
 
                 return {
                     "has_leader": True,
@@ -135,10 +135,7 @@ class SensorUtils:
         radar_range: float = 100.0,
         safety_margin: float = 18.0
     ) -> Optional[Dict[str, Any]]:
-        """
-        OvertakingPredictPipeline ke exact 7 features extract karta hai:
-        [ego_speed, lead_distance, lead_speed, left_lane_available, right_lane_available, left_gap, right_gap]
-        """
+
         telemetry = SensorUtils.get_vehicle_telemetry(veh_id)
         if not telemetry:
             return None

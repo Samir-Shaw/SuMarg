@@ -30,9 +30,7 @@ class PredictPipeline:
             raise CustomException(e, sys)
 
     def predict(self, features: pd.DataFrame) -> np.ndarray:
-        """
-        Input DataFrame par preprocessor transform apply karke target speed predict karta hai.
-        """
+
         try:
             scaled_features = self.preprocessor.transform(features)
             predictions = self.model.predict(scaled_features)
@@ -52,9 +50,7 @@ class PredictPipeline:
         speed_limit: float = 13.89,
         v2v_emergency_flag: int = 0
     ) -> float:
-        """
-        Direct TraCI simulation controller call ke liye method, supporting V2V safety flag.
-        """
+
         try:
             if relative_speed is None:
                 relative_speed = ego_speed - leader_speed
@@ -72,7 +68,7 @@ class PredictPipeline:
                 "relative_speed": float(relative_speed),
                 "time_to_collision": float(time_to_collision),
                 "speed_limit": float(speed_limit),
-                "v2v_emergency_flag": int(v2v_emergency_flag) # <--- Naya V2V feature added
+                "v2v_emergency_flag": int(v2v_emergency_flag) 
             }
 
             input_df = pd.DataFrame([input_dict])
@@ -87,7 +83,6 @@ class PredictPipeline:
 if __name__ == "__main__":
     predictor = PredictPipeline()
 
-    # Test 1: Emergency Braking Zone with V2V Active
     emergency_speed = predictor.predict_target_speed(
         ego_speed=12.0,
         leader_speed=2.0,
@@ -96,7 +91,6 @@ if __name__ == "__main__":
     )
     print(f"[Test 1 - V2V Emergency Stop] Distance: 4m -> Target Speed: {emergency_speed:.2f} m/s")
 
-    # Test 2: Safe Cruising
     cruise_speed = predictor.predict_target_speed(
         ego_speed=10.0,
         leader_speed=13.89,

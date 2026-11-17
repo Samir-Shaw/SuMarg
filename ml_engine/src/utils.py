@@ -21,10 +21,7 @@ from ml_engine.src.logger import logging
 
 
 def save_object(file_path: str, obj: object) -> None:
-    """
-    Saves a python object as a pickle file.
-    Creates destination directory automatically if missing.
-    """
+
     try:
         dir_path = os.path.dirname(file_path)
         os.makedirs(dir_path, exist_ok=True)
@@ -38,9 +35,7 @@ def save_object(file_path: str, obj: object) -> None:
 
 
 def load_object(file_path: str) -> object:
-    """
-    Loads a python object from a pickle file.
-    """
+
     try:
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"The file {file_path} does not exist.")
@@ -55,9 +50,7 @@ def load_object(file_path: str) -> object:
 
 
 def read_yaml(file_path: Path) -> dict:
-    """
-    Reads a YAML file safely and returns content as dictionary.
-    """
+
     try:
         with open(file_path, "r") as yaml_file:
             content = yaml.safe_load(yaml_file)
@@ -68,19 +61,14 @@ def read_yaml(file_path: Path) -> dict:
 
 
 def evaluate_models(X_train, y_train, X_test, y_test, models: dict) -> dict:
-    """
-    Trains each regression model from dictionary and returns comprehensive evaluation metrics.
-    """
+
     try:
         report = {}
         for model_name, model in models.items():
-            # Train model
             model.fit(X_train, y_train)
 
-            # Predictions
             y_pred = model.predict(X_test)
 
-            # Metrics
             r2 = r2_score(y_test, y_pred)
             rmse = float(np.sqrt(mean_squared_error(y_test, y_pred)))
             mae = float(mean_absolute_error(y_test, y_pred))
@@ -99,19 +87,14 @@ def evaluate_models(X_train, y_train, X_test, y_test, models: dict) -> dict:
 
 
 def evaluate_classifiers(X_train, y_train, X_test, y_test, models: dict) -> dict:
-    """
-    Trains each classification model from dictionary and returns comprehensive evaluation metrics.
-    """
+
     try:
         report = {}
         for model_name, model in models.items():
-            # Train classifier
             model.fit(X_train, y_train)
 
-            # Predictions
             y_pred = model.predict(X_test)
 
-            # Metrics
             acc = float(accuracy_score(y_test, y_pred))
             macro_f1 = float(f1_score(y_test, y_pred, average="macro"))
             weighted_f1 = float(f1_score(y_test, y_pred, average="weighted"))
