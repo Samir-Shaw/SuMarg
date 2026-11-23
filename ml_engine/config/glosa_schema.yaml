@@ -1,0 +1,10 @@
+COLUMNS:
+  dist_to_tls: float64
+  signal_phase: int64
+  time_to_switch: float64
+  ego_speed: float64
+  queue_vehicles: int64
+  speed_limit: float64
+  optimal_glide_speed: float64
+
+TARGET_COLUMN: optimal_glide_speed
