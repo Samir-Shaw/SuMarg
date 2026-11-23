@@ -3,6 +3,7 @@ from pathlib import Path
 ROOT_DIR = Path(__file__).resolve().parent.parent
 # simulation paths
 SIM_CONFIG_PATH = ROOT_DIR / "simulation" / "osm.sumocfg"
+GLOSA_SIM_CONFIG_PATH = ROOT_DIR / "simulation" / "glosa.sumocfg"
 
 # ml engine data paths
 DATASET_RAW_PATH = ROOT_DIR / "ml_engine" / "data" / "raw" / "braking_data.csv"

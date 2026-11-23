@@ -159,3 +159,69 @@ class SensorUtils:
             "current_lane": surroundings["current_lane"],
             "total_lanes": surroundings["total_lanes"]
         }
+    @staticmethod
+    def scan_upcoming_tls(veh_id: str, max_range: float = 200.0) -> Dict[str, Any]:
+        """
+        V2I SPaT (Signal Phase and Timing) reader for GLOSA.
+        Reads upcoming traffic light distance, phase (0=RED, 1=YELLOW, 2=GREEN),
+        remaining time until phase switch, and halting queue ahead on the lane.
+        """
+        try:
+            tls_list = traci.vehicle.getNextTLS(veh_id)
+            if not tls_list:
+                return {"has_tls": False}
+
+            # tls_list[0] -> (tlsID, tlsLinkIndex, distance, stateChar)
+            tls_id, _, dist_to_tls, state_char = tls_list[0]
+            dist_to_tls = float(dist_to_tls)
+
+            if dist_to_tls > max_range:
+                return {"has_tls": False}
+
+            # Convert SUMO signal state character into numeric phase
+            state_lower = state_char.lower()
+            if state_lower == "g":
+                signal_phase = 2
+            elif state_lower == "y":
+                signal_phase = 1
+            else:
+                signal_phase = 0
+
+            sim_time = float(traci.simulation.getTime())
+            next_switch = float(traci.trafficlight.getNextSwitch(tls_id))
+            time_to_switch = max(0.1, next_switch - sim_time)
+
+            lane_id = traci.vehicle.getLaneID(veh_id)
+            queue_vehicles = int(traci.lane.getLastStepHaltingNumber(lane_id)) if lane_id else 0
+            speed_limit = float(traci.lane.getMaxSpeed(lane_id)) if lane_id else MAX_SPEED
+
+            return {
+                "has_tls": True,
+                "tls_id": tls_id,
+                "dist_to_tls": round(dist_to_tls, 2),
+                "signal_phase": signal_phase,
+                "time_to_switch": round(time_to_switch, 2),
+                "queue_vehicles": queue_vehicles,
+                "speed_limit": round(speed_limit, 2)
+            }
+        except traci.TraCIException:
+            return {"has_tls": False}
+
+    @staticmethod
+    def get_glosa_features_for_ml(veh_id: str, max_range: float = 200.0) -> Optional[Dict[str, float]]:
+        telemetry = SensorUtils.get_vehicle_telemetry(veh_id)
+        if not telemetry:
+            return None
+
+        tls = SensorUtils.scan_upcoming_tls(veh_id, max_range=max_range)
+        if not tls.get("has_tls", False):
+            return None
+
+        return {
+            "dist_to_tls": tls["dist_to_tls"],
+            "signal_phase": tls["signal_phase"],
+            "time_to_switch": tls["time_to_switch"],
+            "ego_speed": round(telemetry["speed"], 2),
+            "queue_vehicles": tls["queue_vehicles"],
+            "speed_limit": tls["speed_limit"]
+        }
